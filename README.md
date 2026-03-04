@@ -39,6 +39,12 @@ mcp-shield test "npx server" --output report.json
 # JSON to stdout (for piping)
 mcp-shield test "npx server" --format json
 
+# SARIF output (for GitHub Code Scanning)
+mcp-shield test "npx server" --format sarif
+
+# SARIF to file (can combine with any --format)
+mcp-shield test "npx server" --sarif-output report.sarif
+
 # Both terminal and JSON output
 mcp-shield test "npx server" --format both --output report.json
 
@@ -58,16 +64,16 @@ Example output:
  Check        | Result | Severity | Message
  COMP-001     |  PASS  | critical | Handshake OK
  COMP-002     |  PASS  | error    | Server identity: filesystem-server v0.2.0
- SEC-002      |  WARN  | high     | Found 11 potential injection vector(s)
- SEC-004      |  FAIL  | high     | 2 dangerous tool(s): move_file, edit_file
- SEC-005      |  WARN  | medium   | Write scope: local filesystem
+ SEC-002      |  WARN  | high     | Found 11 potential injection vector(s) (CWE-78, CWE-89, CWE-22)
+ SEC-004      |  FAIL  | high     | 2 dangerous tool(s): move_file, edit_file (CWE-78, CWE-250)
+ SEC-005      |  WARN  | medium   | Write scope: local filesystem (CWE-434)
  ADV-002      |  WARN  | info     | External dependencies: filesystem access
 
  Score: 57/100  Grade: D
 
 ─────────────── Recommendations ───────────────
 
-  [1] Block dangerous tools (SEC-004)
+  [1] Block dangerous tools (SEC-004) (CWE-78, CWE-250)
       Tools: move_file, edit_file
       Action: Add --deny rules in proxy or require user confirmation
 
@@ -192,15 +198,15 @@ mcp-shield audit --db /path/to/audit.db stats --since 7d
 
 ### Security (SEC-001..007)
 
-| Check | What it detects | Severity |
-|-------|----------------|----------|
-| SEC-001 | Tool poisoning (hidden instructions in descriptions) | critical |
-| SEC-002 | Injection vectors (path, URL, SQL, code fields) | high |
-| SEC-003 | Aggregated security score (0-100) | -- |
-| SEC-004 | Dangerous operations (`delete`, `exec`, `deploy`) | high |
-| SEC-005 | Write scope (local vs cloud vs user-facing) | medium |
-| SEC-006 | Idempotency risk (non-retryable operations) | medium |
-| SEC-007 | Cost risk (cloud provisioning, paid APIs) | low |
+| Check | What it detects | Severity | CWE |
+|-------|----------------|----------|-----|
+| SEC-001 | Tool poisoning (hidden instructions in descriptions) | critical | [CWE-94](https://cwe.mitre.org/data/definitions/94.html) |
+| SEC-002 | Injection vectors (path, URL, SQL, code fields) | high | [CWE-78](https://cwe.mitre.org/data/definitions/78.html), [CWE-89](https://cwe.mitre.org/data/definitions/89.html), [CWE-22](https://cwe.mitre.org/data/definitions/22.html) |
+| SEC-003 | Aggregated security score (0-100) | -- | -- |
+| SEC-004 | Dangerous operations (`delete`, `exec`, `deploy`) | high | [CWE-78](https://cwe.mitre.org/data/definitions/78.html), [CWE-250](https://cwe.mitre.org/data/definitions/250.html) |
+| SEC-005 | Write scope (local vs cloud vs user-facing) | medium | [CWE-434](https://cwe.mitre.org/data/definitions/434.html) |
+| SEC-006 | Idempotency risk (non-retryable operations) | medium | [CWE-352](https://cwe.mitre.org/data/definitions/352.html) |
+| SEC-007 | Cost risk (cloud provisioning, paid APIs) | low | [CWE-770](https://cwe.mitre.org/data/definitions/770.html) |
 
 ### Advisory (ADV-001..005)
 
@@ -257,6 +263,37 @@ Every tool is classified into a risk tier:
 | `write_reversible` | write_file, create_directory |
 | `write_external` | send_email, deploy, webhook |
 | `write_sensitive` | delete, exec, eval, drop |
+
+## SARIF & GitHub Code Scanning
+
+MCP Shield can output [SARIF 2.1.0](https://sarifweb.azurewebsites.net/) reports — the standard format natively supported by GitHub's Security tab.
+
+```bash
+# Generate SARIF on stdout
+mcp-shield test "npx server" --format sarif
+
+# Save SARIF to file (works alongside any --format)
+mcp-shield test "npx server" --sarif-output results.sarif
+```
+
+### GitHub Actions integration
+
+```yaml
+- name: Scan MCP server
+  run: |
+    pip install mcp-shield-cli
+    mcp-shield test "npx -y @modelcontextprotocol/server-filesystem /tmp" \
+      --sarif-output results.sarif \
+      --fail-on high
+
+- name: Upload SARIF
+  if: always()
+  uses: github/codeql-action/upload-sarif@v3
+  with:
+    sarif_file: results.sarif
+```
+
+SARIF output includes CWE references, CVSS-like severity scores, and logical locations (MCP tool names) — all visible in the GitHub Security tab.
 
 ## Contributing
 

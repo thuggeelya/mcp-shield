@@ -52,6 +52,14 @@ def to_dict(report: SuiteReport) -> Dict[str, Any]:
             }
             for r in sort_results(report.results)
         ],
+        "tools": [
+            {
+                "name": t.name,
+                "description": t.description,
+                "risk_tier": t.risk_tier,
+            }
+            for t in report.tools
+        ],
         "recommendations": recommendations_to_dict(generate_recommendations(report)),
     }
 

@@ -9,7 +9,7 @@ from rich.text import Text
 
 from mcp_shield.reporting.recommendations import generate_recommendations, render_recommendations
 from mcp_shield.reporting.score import compute_score, grade_label
-from mcp_shield.testing.result import CheckResult, Outcome, SuiteReport, sort_results
+from mcp_shield.testing.result import CheckResult, Outcome, SuiteReport, ToolSummary, sort_results
 
 _OUTCOME_STYLE = {
     Outcome.PASS: "green",
@@ -65,6 +65,36 @@ def _render_critical_issues(
     console.print()
 
 
+_TIER_STYLE = {
+    "write_sensitive": "red bold",
+    "write_external": "yellow bold",
+    "write_reversible": "yellow",
+    "read": "green",
+    "unknown": "dim",
+}
+
+
+def _render_tools(tools: list[ToolSummary], console: Console) -> None:
+    """Render a table of discovered tools with risk tiers."""
+    console.rule(f"Tools ({len(tools)} discovered)")
+    console.print()
+
+    table = Table(show_header=True, header_style="bold", expand=True)
+    table.add_column("Tool", min_width=20)
+    table.add_column("Risk Tier", width=20)
+    table.add_column("Description")
+
+    for t in tools:
+        tier_style = _TIER_STYLE.get(t.risk_tier, "")
+        tier_text = Text(t.risk_tier, style=tier_style)
+        # Truncate long descriptions
+        desc = t.description[:80] + "..." if len(t.description) > 80 else t.description
+        table.add_row(t.name, tier_text, desc)
+
+    console.print(table)
+    console.print()
+
+
 def render(report: SuiteReport, console: Console | None = None) -> None:
     """Print the suite report to the terminal."""
     console = console or Console()
@@ -98,7 +128,13 @@ def render(report: SuiteReport, console: Console | None = None) -> None:
         result_text = Text(symbol, style=style)
         time_str = f"{r.duration_ms}ms" if r.duration_ms else ""
 
-        table.add_row(r.check_id, result_text, r.severity, r.message, time_str)
+        # Append CWE IDs to message for FAIL/WARN results
+        message = r.message
+        cwe_ids = r.metadata.get("cwe_ids", []) if r.metadata else []
+        if cwe_ids and r.outcome in (Outcome.FAIL, Outcome.WARN):
+            message = f"{message} ({', '.join(cwe_ids)})"
+
+        table.add_row(r.check_id, result_text, r.severity, message, time_str)
 
         # Show details on failure/warning — use severity-aware style
         if r.details and r.outcome in (Outcome.FAIL, Outcome.WARN, Outcome.ERROR):
@@ -138,6 +174,10 @@ def render(report: SuiteReport, console: Console | None = None) -> None:
         )
     )
     console.print()
+
+    # Tools discovered
+    if report.tools:
+        _render_tools(report.tools, console)
 
     # Recommendations
     recs = generate_recommendations(report)

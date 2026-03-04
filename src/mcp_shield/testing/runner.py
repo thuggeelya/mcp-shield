@@ -12,7 +12,7 @@ from mcp import ClientSession
 
 from mcp_shield.client.connection import MCPConnection, ServerTarget
 from mcp_shield.testing.context import cached_list_tools, init_result_var
-from mcp_shield.testing.result import CheckResult, Outcome, SuiteReport
+from mcp_shield.testing.result import CheckResult, Outcome, SuiteReport, ToolSummary
 
 # Importing suites triggers their @check decorators so they appear in the
 # registry.  Keep these imports even though they look unused.
@@ -73,8 +73,9 @@ class Runner:
                     # Run security scan once and store in ScanConfig
                     suite_names = self._resolve_suites()
                     if "security" in suite_names:
-                        sec_report = await self._run_security_scan(session, config)
+                        sec_report, tool_infos = await self._run_security_scan(session, config)
                         config.report = sec_report
+                        report.tools = self._build_tool_summaries(tool_infos)
 
                     for name in suite_names:
                         checks = get_suite(name)
@@ -89,8 +90,11 @@ class Runner:
             scan_config.reset(token)
 
     @staticmethod
-    async def _run_security_scan(session: ClientSession, config: object) -> object:
-        """Fetch tools and run all security detectors once."""
+    async def _run_security_scan(session: ClientSession, config: object) -> tuple:
+        """Fetch tools and run all security detectors once.
+
+        Returns (SecurityReport, list[ToolInfo]).
+        """
         from mcp_shield.security.scanner import SecurityScanner, default_detectors
         from mcp_shield.models.mcp_types import ToolInfo
 
@@ -108,7 +112,32 @@ class Runner:
 
         use_ml = getattr(config, "use_ml", False)
         scanner = SecurityScanner(detectors=default_detectors(use_ml=use_ml))
-        return scanner.scan_tools(infos)
+        return scanner.scan_tools(infos), infos
+
+    @staticmethod
+    def _build_tool_summaries(tool_infos: list) -> list[ToolSummary]:
+        """Classify each tool by risk tier and return summaries."""
+        from mcp_shield.classification.risk import classify_tool_risk
+
+        # Risk tier ordering for sorting (most dangerous first)
+        _TIER_ORDER = {
+            "write_sensitive": 0,
+            "write_external": 1,
+            "write_reversible": 2,
+            "unknown": 3,
+            "read": 4,
+        }
+
+        summaries = [
+            ToolSummary(
+                name=t.name,
+                description=t.description,
+                risk_tier=classify_tool_risk(t.name, t.description, t.input_schema).value,
+            )
+            for t in tool_infos
+        ]
+        summaries.sort(key=lambda s: (_TIER_ORDER.get(s.risk_tier, 9), s.name))
+        return summaries
 
     # ------------------------------------------------------------------
 

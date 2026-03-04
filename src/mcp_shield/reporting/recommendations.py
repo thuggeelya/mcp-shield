@@ -15,6 +15,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 
+from mcp_shield.security.cwe import cwe_for_check
 from mcp_shield.testing.result import CheckResult, Outcome, SuiteReport
 
 # ── Detail parsers ────────────────────────────────────────────────────
@@ -73,6 +74,7 @@ class Recommendation:
     action: str  # "Add --deny rules in the proxy"
     tools: list[str] = field(default_factory=list)
     check_id: str = ""
+    cwe_ids: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -193,6 +195,7 @@ def generate_recommendations(report: SuiteReport) -> RecommendationReport:
             title=f"Low security score{score_val}",
             action="Address the specific findings below to improve the score",
             check_id="SEC-003",
+            cwe_ids=cwe_for_check("SEC-003"),
         ))
 
     # Security recommendations in priority order
@@ -208,6 +211,7 @@ def generate_recommendations(report: SuiteReport) -> RecommendationReport:
             action=cfg["action"],
             tools=tools,
             check_id=check_id,
+            cwe_ids=cwe_for_check(check_id),
         ))
 
     # Schema recommendation (merge COMP-008 + COMP-009)
@@ -251,6 +255,7 @@ def recommendations_to_dict(recs: RecommendationReport) -> Dict[str, Any]:
                 "action": r.action,
                 "tools": r.tools,
                 "check_id": r.check_id,
+                "cwe_ids": r.cwe_ids,
             }
             for r in recs.items
         ],
@@ -286,8 +291,9 @@ def render_recommendations(recs: RecommendationReport, console: Console) -> None
     for idx, rec in enumerate(recs.items, 1):
         style = _PRIORITY_STYLE.get(rec.priority, "")
 
-        # Title line
-        title_text = Text(f"  [{idx}] {rec.title} ({rec.check_id})", style=style)
+        # Title line (with CWE IDs if present)
+        cwe_suffix = f" ({', '.join(rec.cwe_ids)})" if rec.cwe_ids else ""
+        title_text = Text(f"  [{idx}] {rec.title} ({rec.check_id}){cwe_suffix}", style=style)
         console.print(title_text)
 
         # Tools line

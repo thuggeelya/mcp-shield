@@ -11,6 +11,7 @@ from typing import Callable
 
 from mcp import ClientSession
 
+from mcp_shield.security.cwe import cwe_for_check
 from mcp_shield.security.scanner import scan_config
 from mcp_shield.testing.registry import check
 from mcp_shield.testing.result import CheckResult, Outcome
@@ -82,6 +83,7 @@ def _category_check(
                 message=f"Found {len(matches)} {found_label}(s)",
                 severity=_check._severity,  # type: ignore[attr-defined]
                 details=[f"  [{_sev(f.severity)}] {f.title}" for f in matches],
+                metadata={"cwe_ids": cwe_for_check(check_id)},
             )
 
         return CheckResult(
@@ -129,6 +131,7 @@ async def check_tool_poisoning(session: ClientSession) -> CheckResult:
                 + (f': "{f.evidence[:80]}"' if f.evidence else "")
                 for f in poisoning
             ],
+            metadata={"cwe_ids": cwe_for_check("SEC-001")},
         )
 
     return CheckResult(
@@ -175,7 +178,7 @@ async def check_security_score(session: ClientSession) -> CheckResult:
         outcome=outcome,
         message=f"Security score: {report.score:.0f}/100 ({len(report.findings)} finding(s))",
         severity="medium",
-        metadata={"score": report.score, "findings_count": len(report.findings)},
+        metadata={"score": report.score, "findings_count": len(report.findings), "cwe_ids": cwe_for_check("SEC-003")},
     )
 
 

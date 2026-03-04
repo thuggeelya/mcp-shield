@@ -43,6 +43,15 @@ class CheckResult:
 
 
 @dataclass
+class ToolSummary:
+    """Summary of a single MCP tool discovered on the server."""
+
+    name: str
+    description: str = ""
+    risk_tier: str = "unknown"  # read | write_reversible | write_external | write_sensitive | unknown
+
+
+@dataclass
 class SuiteReport:
     """Aggregated results from all check suites."""
 
@@ -51,6 +60,7 @@ class SuiteReport:
     server_version: str = ""
     protocol_version: str = ""
     results: List[CheckResult] = field(default_factory=list)
+    tools: List[ToolSummary] = field(default_factory=list)
     score: float = 0.0
     total_checks: int = 0
     passed: int = 0

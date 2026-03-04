@@ -44,7 +44,7 @@ def _should_fail(report: SuiteReport, fail_on: str) -> bool:
 )
 @click.option(
     "--format", "-f", "output_format",
-    type=click.Choice(["terminal", "json", "both"]),
+    type=click.Choice(["terminal", "json", "sarif", "both"]),
     default="terminal",
     help="Output format.",
 )
@@ -73,6 +73,12 @@ def _should_fail(report: SuiteReport, fail_on: str) -> bool:
     help="Enable ML-based prompt injection detection (DeBERTa-v3, slower but more accurate).",
 )
 @click.option(
+    "--sarif-output",
+    type=click.Path(),
+    default=None,
+    help="Write SARIF report to file (for GitHub Code Scanning).",
+)
+@click.option(
     "--env", "-e",
     multiple=True,
     help="Environment variables for stdio server as KEY=VALUE. Can repeat.",
@@ -85,6 +91,7 @@ def test_cmd(
     timeout: float,
     fail_on: str,
     ml: bool,
+    sarif_output: str | None,
     env: tuple[str, ...],
 ) -> None:
     """Test an MCP server for compliance and security issues.
@@ -198,6 +205,10 @@ def test_cmd(
         from mcp_shield.reporting.json_report import render_json
         click.echo(render_json(report))
 
+    if output_format == "sarif":
+        from mcp_shield.reporting.sarif_report import render_sarif
+        click.echo(render_sarif(report))
+
     if output:
         from mcp_shield.reporting.json_report import write_json
         try:
@@ -205,6 +216,15 @@ def test_cmd(
             click.echo(f"Report written to {output}")
         except (ValueError, OSError) as exc:
             click.echo(f"Error writing report: {exc}", err=True)
+            sys.exit(1)
+
+    if sarif_output:
+        from mcp_shield.reporting.sarif_report import write_sarif
+        try:
+            write_sarif(report, sarif_output)
+            click.echo(f"SARIF report written to {sarif_output}")
+        except (ValueError, OSError) as exc:
+            click.echo(f"Error writing SARIF report: {exc}", err=True)
             sys.exit(1)
 
     # --- Exit code ---
