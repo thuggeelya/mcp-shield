@@ -10,7 +10,7 @@ Security scanner, runtime proxy, and audit logger for [Model Context Protocol](h
 ## Install
 
 ```bash
-pip install mcp-shield
+pip install mcp-shield-cli
 ```
 
 Requires Python 3.11+ and Node.js (for npx-based MCP servers).

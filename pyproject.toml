@@ -1,5 +1,5 @@
 [project]
-name = "mcp-shield"
+name = "mcp-shield-cli"
 version = "0.1.0"
 description = "Security scanner, runtime proxy, and audit logger for MCP servers"
 readme = "README.md"
