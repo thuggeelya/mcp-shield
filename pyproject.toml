@@ -1,0 +1,73 @@
+[project]
+name = "mcp-shield"
+version = "0.1.0"
+description = "Security scanner, runtime proxy, and audit logger for MCP servers"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+keywords = ["mcp", "security", "testing", "proxy", "audit", "model-context-protocol"]
+authors = [
+    { name = "thuggeelya", email = "thuggeelya@gmail.com" },
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+    "Topic :: Software Development :: Testing",
+]
+dependencies = [
+    "mcp>=1.0.0",
+    "click>=8.1",
+    "rich>=13.0",
+    "pydantic>=2.0",
+    "pyyaml>=6.0",
+    "onnxruntime>=1.18",
+    "tokenizers>=0.20",
+    "huggingface-hub>=0.24",
+]
+
+[project.urls]
+Homepage = "https://github.com/thuggeelya/mcp-shield"
+Repository = "https://github.com/thuggeelya/mcp-shield"
+Issues = "https://github.com/thuggeelya/mcp-shield/issues"
+
+[project.scripts]
+mcp-shield = "mcp_shield.cli.main:cli"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "pytest-timeout>=2.3",
+    "ruff>=0.6",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mcp_shield"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+markers = [
+    "slow: tests requiring subprocess MCP servers or network (skipped by default)",
+    "real_server: tests against real MCP servers (require npx/Node.js)",
+]
+addopts = "-m 'not slow and not real_server' --timeout=30"
+timeout = 30
