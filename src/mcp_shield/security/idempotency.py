@@ -32,6 +32,21 @@ _NON_IDEMPOTENT_DESC = re.compile(
     r"publish(?:es|ing)?)\b"
 )
 
+# Read-only name prefixes — these tools are safe to retry regardless of
+# what their description says (e.g. "creates a summary" in a read tool).
+_READ_ONLY_NAME = re.compile(
+    r"(?x)(?:^|_)"
+    r"(get|list|search|find|fetch|read|query|lookup|describe|show|view|browse|"
+    r"inspect|count|exists|has|is|check|verify|validate|resolve|discover|"
+    r"explore|scan|analyze|detect|match|filter|select|retrieve|load|"
+    r"export|extract|parse|convert|format|render|display|print|dump|"
+    r"compare|diff|stat|info|help|status|health|ping|test|probe|"
+    r"measure|calculate|compute|estimate|preview|sample|suggest|"
+    r"recommend|summarize|aggregate|classify|categorize|sort|rank)"
+    r"(?:$|_)",
+    re.IGNORECASE,
+)
+
 # Idempotency key in schema suggests awareness
 _IDEMPOTENCY_KEY = re.compile(
     r"(?i)(idempoten|request_id|client_id|dedup|nonce)"
@@ -46,6 +61,10 @@ class IdempotencyDetector:
         name = tool.name
         desc = tool.description or ""
         schema = tool.input_schema or {}
+
+        # Skip tools whose names indicate read-only operations
+        if _READ_ONLY_NAME.search(name):
+            return findings
 
         m = _NON_IDEMPOTENT_NAME.search(name)
         if not m:
