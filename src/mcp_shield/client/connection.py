@@ -180,17 +180,13 @@ class MCPConnection:
                 stdio_client(params)
             )
         elif self._target.transport == TransportKind.HTTP:
-            from mcp.client.streamable_http import streamable_http_client
+            from mcp_shield.client.transport import resolve_transport
 
-            kwargs: dict[str, Any] = {}
-            if self._target.headers:
-                import httpx
-                kwargs["http_client"] = httpx.AsyncClient(
-                    headers=self._target.headers
-                )
-
-            read_stream, write_stream, _ = await self._stack.enter_async_context(
-                streamable_http_client(self._target.url, **kwargs)
+            provider = await resolve_transport(
+                self._target.url, self._target.headers,
+            )
+            read_stream, write_stream = await self._stack.enter_async_context(
+                provider.connect(self._target.url, self._target.headers)
             )
         else:
             raise ValueError(f"Unsupported transport: {self._target.transport}")
