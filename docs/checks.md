@@ -235,6 +235,8 @@ Always produces WARN (never FAIL). Severity calibrated to MEDIUM because detecti
 
 Tools that already include an `idempotency_key` field in their input schema are not flagged.
 
+Tools with read-only name prefixes (get, list, search, find, fetch, read, query, lookup, describe, resolve, compute, preview, etc.) are automatically skipped — even if their description contains non-idempotent verbs like "creates" or "posts".
+
 ### SEC-007 — Cost/Quota Risk
 
 | Field | Value |
