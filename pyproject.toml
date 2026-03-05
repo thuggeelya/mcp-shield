@@ -1,6 +1,6 @@
 [project]
 name = "mcp-shield-cli"
-version = "0.2.0"
+version = "0.2.2"
 description = "Security scanner, runtime proxy, and audit logger for MCP servers"
 readme = "README.md"
 requires-python = ">=3.11"
