@@ -97,7 +97,8 @@ class TestSarifStructure:
         sarif = to_sarif(_sample_report())
         driver = sarif["runs"][0]["tool"]["driver"]
         assert driver["name"] == "mcp-shield"
-        assert driver["version"] == "0.1.0"
+        from mcp_shield import __version__
+        assert driver["version"] == __version__
         assert "mcp-shield" in driver["informationUri"]
 
     def test_sarif_supported_taxonomies(self):
