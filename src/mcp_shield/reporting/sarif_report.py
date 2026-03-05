@@ -135,7 +135,6 @@ def to_sarif(report: SuiteReport) -> dict[str, Any]:
                     relationships.append({
                         "target": {
                             "id": cwe_num,
-                            "guid": f"CWE-{cwe_num}",
                             "toolComponent": {"name": "CWE"},
                         },
                         "kinds": ["superset"],
@@ -185,7 +184,7 @@ def to_sarif(report: SuiteReport) -> dict[str, Any]:
                     "version": __version__,
                     "informationUri": "https://github.com/thuggeelya/mcp-shield",
                     "rules": rules,
-                    "supportedTaxonomies": [{"name": "CWE", "version": "4.14"}],
+                    "supportedTaxonomies": [{"name": "CWE"}],
                 },
             },
             "results": results,
@@ -194,7 +193,7 @@ def to_sarif(report: SuiteReport) -> dict[str, Any]:
                 "version": "4.14",
                 "organization": "MITRE",
                 "informationUri": "https://cwe.mitre.org/",
-                "comprehensive": False,
+                "isComprehensive": False,
             }],
         }],
     }
