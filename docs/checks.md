@@ -8,7 +8,6 @@ Complete reference for all compliance, security, and advisory checks. Each check
 
 Validates that the MCP server correctly implements the Model Context Protocol specification.
 
-**Source:** `testing/suites/compliance.py`
 
 ### COMP-001 — Verify Handshake
 
@@ -127,7 +126,6 @@ Scans tool definitions for known MCP attack vectors. All security checks include
 | SEC-006 | [CWE-352](https://cwe.mitre.org/data/definitions/352.html) Cross-Site Request Forgery |
 | SEC-007 | [CWE-770](https://cwe.mitre.org/data/definitions/770.html) Resource Allocation Without Limits |
 
-**Source:** `testing/suites/security.py`, `security/cwe.py`
 
 ### SEC-001 — Tool Poisoning Scan
 
@@ -255,7 +253,6 @@ Always produces WARN (never FAIL). All findings are LOW severity because detecti
 
 Informational checks that provide helpful hints but never affect the security score. Advisory checks only produce PASS, WARN (with severity="info"), or SKIP — never FAIL.
 
-**Source:** `testing/suites/advisory.py`
 
 ### ADV-001 — Auth Requirement Hints
 
@@ -336,7 +333,6 @@ Check IDs must be unique across all suites. Convention: `{SUITE_PREFIX}-{NNN}`.
 
 After running all checks, `mcp-shield` automatically generates actionable recommendations from FAIL/WARN results.
 
-**Source:** `reporting/recommendations.py`
 
 ### How it works
 
