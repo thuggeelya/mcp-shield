@@ -264,19 +264,26 @@ Every tool is classified into a risk tier:
 | `write_external` | send_email, deploy, webhook |
 | `write_sensitive` | delete, exec, eval, drop |
 
-## SARIF & GitHub Code Scanning
+## GitHub Actions
 
-MCP Shield can output [SARIF 2.1.0](https://sarifweb.azurewebsites.net/) reports — the standard format natively supported by GitHub's Security tab.
+### Using the action (recommended)
 
-```bash
-# Generate SARIF on stdout
-mcp-shield test "npx server" --format sarif
+[`thuggeelya/mcp-shield-action@v1`](https://github.com/thuggeelya/mcp-shield-action) runs the scan, posts a PR comment with findings, and uploads SARIF to GitHub Security — all automatically.
 
-# Save SARIF to file (works alongside any --format)
-mcp-shield test "npx server" --sarif-output results.sarif
+```yaml
+- uses: actions/checkout@v4
+- uses: actions/setup-node@v4
+  with:
+    node-version: 20
+- run: npm ci && npm run build
+- uses: thuggeelya/mcp-shield-action@v1
+  with:
+    server: 'node dist/index.js'
 ```
 
-### GitHub Actions integration
+### Manual setup
+
+If you need more control, use `mcp-shield-cli` directly:
 
 ```yaml
 - name: Scan MCP server
@@ -293,7 +300,17 @@ mcp-shield test "npx server" --sarif-output results.sarif
     sarif_file: results.sarif
 ```
 
-SARIF output includes CWE references, CVSS-like severity scores, and logical locations (MCP tool names) — all visible in the GitHub Security tab.
+### SARIF & GitHub Code Scanning
+
+Both approaches produce [SARIF 2.1.0](https://sarifweb.azurewebsites.net/) reports with CWE references, severity scores, and MCP tool names — visible in GitHub's Security tab.
+
+```bash
+# Generate SARIF on stdout
+mcp-shield test "npx server" --format sarif
+
+# Save SARIF to file (works alongside any --format)
+mcp-shield test "npx server" --sarif-output results.sarif
+```
 
 ## Contributing
 
